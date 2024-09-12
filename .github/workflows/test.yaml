@@ -10,7 +10,7 @@ permissions:
 jobs:
 
   testGo:
-    runs-on: medium
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
 
