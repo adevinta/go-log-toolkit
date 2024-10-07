@@ -76,6 +76,20 @@ func TestLogrLevelsWithLogrusLevels(t *testing.T) {
 			expectedInfoLevel: "trace",
 		},
 		{
+			logrusLevel:       logrus.DebugLevel,
+			logrLevel:         0,
+			expectedInfoLevel: "info",
+		},
+		{
+			logrusLevel:       logrus.DebugLevel,
+			logrLevel:         1,
+			expectedInfoLevel: "debug",
+		},
+		{
+			logrusLevel: logrus.DebugLevel,
+			logrLevel:   2,
+		},
+		{
 			logrusLevel:       logrus.InfoLevel,
 			logrLevel:         0,
 			expectedInfoLevel: "info",
