@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -48,64 +49,60 @@ func TestWithName(t *testing.T) {
 	assert.JSONEq(t, `{"level":"info","msg":"hello world", "name": "pkg.method","time":"2020-03-13T14:00:00Z"}`, b.String())
 }
 
-func TestLogrusTraceLevelWithLogrLevel(t *testing.T) {
-	tested, b := initTestLogrus(logrus.TraceLevel)
-	tested.V(0).Info("hello world")
-	assert.JSONEq(t, `{"level":"info","msg":"hello world","time":"2020-03-13T14:00:00Z"}`, b.String())
+func TestLogrLevelsWithLogrusLevels(t *testing.T) {
+	tests := []struct {
+		logrusLevel       logrus.Level
+		logrLevel         int
+		expectedInfoLevel string
+	}{
+		{
+			logrusLevel:       logrus.TraceLevel,
+			logrLevel:         0,
+			expectedInfoLevel: "info",
+		},
+		{
+			logrusLevel:       logrus.TraceLevel,
+			logrLevel:         1,
+			expectedInfoLevel: "debug",
+		},
+		{
+			logrusLevel:       logrus.TraceLevel,
+			logrLevel:         2,
+			expectedInfoLevel: "trace",
+		},
+		{
+			logrusLevel:       logrus.TraceLevel,
+			logrLevel:         3,
+			expectedInfoLevel: "trace",
+		},
+		{
+			logrusLevel:       logrus.InfoLevel,
+			logrLevel:         0,
+			expectedInfoLevel: "info",
+		},
+		{
+			logrusLevel: logrus.InfoLevel,
+			logrLevel:   1,
+		},
+	}
 
-	b.Reset()
-	tested.V(0).Error(errors.New("testError"), "this is a test", "some-context", "help")
-	assert.JSONEq(t, `{"error":"testError","some-context": "help","level":"error","msg":"this is a test","time":"2020-03-13T14:00:00Z"}`, b.String())
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("V(%d) with Logrus %s level", tt.logrLevel, tt.logrusLevel.String()), func(t *testing.T) {
+			tested, b := initTestLogrus(tt.logrusLevel)
+			tested.V(tt.logrLevel).Info("hello world")
 
-	b.Reset()
-	tested.V(1).Info("hello world")
-	assert.JSONEq(t, `{"level":"debug","msg":"hello world","time":"2020-03-13T14:00:00Z"}`, b.String())
+			if tt.expectedInfoLevel == "" {
+				assert.Empty(t, b.String())
+			} else {
+				expectedLog := fmt.Sprintf(`{"level":"%s","msg":"hello world","time":"2020-03-13T14:00:00Z"}`, tt.expectedInfoLevel)
+				assert.JSONEq(t, expectedLog, b.String())
+			}
 
-	b.Reset()
-	tested.V(1).Error(errors.New("testError"), "this is a test", "some-context", "help")
-	assert.JSONEq(t, `{"error":"testError","some-context": "help","level":"error","msg":"this is a test","time":"2020-03-13T14:00:00Z"}`, b.String())
-
-	b.Reset()
-	tested.V(2).Info("hello world")
-	assert.JSONEq(t, `{"level":"trace","msg":"hello world","time":"2020-03-13T14:00:00Z"}`, b.String())
-
-	b.Reset()
-	tested.V(2).Error(errors.New("testError"), "this is a test", "some-context", "help")
-	assert.JSONEq(t, `{"error":"testError","some-context": "help","level":"error","msg":"this is a test","time":"2020-03-13T14:00:00Z"}`, b.String())
-
-	b.Reset()
-	tested.V(3).Info("hello world")
-	assert.JSONEq(t, `{"level":"trace","msg":"hello world","time":"2020-03-13T14:00:00Z"}`, b.String())
-
-	b.Reset()
-	tested.V(3).Error(errors.New("testError"), "this is a test", "some-context", "help")
-	assert.JSONEq(t, `{"error":"testError","some-context": "help","level":"error","msg":"this is a test","time":"2020-03-13T14:00:00Z"}`, b.String())
-
-	b.Reset()
-	tested.V(4).Info("hello world")
-	assert.JSONEq(t, `{"level":"trace","msg":"hello world","time":"2020-03-13T14:00:00Z"}`, b.String())
-
-	b.Reset()
-	tested.V(4).Error(errors.New("testError"), "this is a test", "some-context", "help")
-	assert.JSONEq(t, `{"error":"testError","some-context": "help","level":"error","msg":"this is a test","time":"2020-03-13T14:00:00Z"}`, b.String())
-}
-
-func TestLogrusInfoLevelWithLogrLevel(t *testing.T) {
-	tested, b := initTestLogrus(logrus.InfoLevel)
-	tested.V(0).Info("hello world")
-	assert.JSONEq(t, `{"level":"info","msg":"hello world","time":"2020-03-13T14:00:00Z"}`, b.String())
-
-	b.Reset()
-	tested.V(0).Error(errors.New("testError"), "this is a test", "some-context", "help")
-	assert.JSONEq(t, `{"error":"testError","some-context": "help","level":"error","msg":"this is a test","time":"2020-03-13T14:00:00Z"}`, b.String())
-
-	b.Reset()
-	tested.V(1).Info("hello world")
-	assert.Empty(t, b.String())
-
-	b.Reset()
-	tested.V(1).Error(errors.New("testError"), "this is a test", "some-context", "help")
-	assert.JSONEq(t, `{"error":"testError","some-context": "help","level":"error","msg":"this is a test","time":"2020-03-13T14:00:00Z"}`, b.String())
+			b.Reset()
+			tested.V(tt.logrLevel).Error(errors.New("testError"), "this is a test", "some-context", "help")
+			assert.JSONEq(t, `{"error":"testError","some-context": "help","level":"error","msg":"this is a test","time":"2020-03-13T14:00:00Z"}`, b.String())
+		})
+	}
 }
 
 func TestEnabled(t *testing.T) {
