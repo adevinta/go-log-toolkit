@@ -27,7 +27,7 @@ func ContextualizeLogr(logger logr.Logger, ctx context.Context) logr.Logger {
 func NewLogr(logger *logrus.Logger) logr.Logger {
 	return logr.New(&logrusLogger{
 		logger: logrus.NewEntry(logger),
-		level:  logrus.InfoLevel,
+		level:  logrus.GetLevel(),
 	})
 }
 
@@ -40,7 +40,9 @@ func NewLogr(logger *logrus.Logger) logr.Logger {
 // while the err field should be used to attach the actual error that
 // triggered this log line, if present.
 func (l *logrusLogger) Error(err error, msg string, keysAndValues ...interface{}) {
-	l.Info(0, msg, append(keysAndValues, "error", err)...)
+	if l.Enabled(0) {
+		l.logrusWithValues(append(keysAndValues, "error", err)...).Log(logrus.ErrorLevel, msg)
+	}
 }
 
 // WithValues adds some key-value pairs of context to a logger.
@@ -119,14 +121,10 @@ func (l *logrusLogger) logrusWithValues(keysAndValues ...interface{}) *logrus.En
 func logrLevelToLogrus(level int) logrus.Level {
 	switch level {
 	case 0:
-		return logrus.ErrorLevel
-	case 1:
-		return logrus.WarnLevel
-	case 2:
 		return logrus.InfoLevel
-	case 3:
+	case 1:
 		return logrus.DebugLevel
-	case 4:
+	case 2:
 		return logrus.TraceLevel
 	default:
 		return logrus.TraceLevel
