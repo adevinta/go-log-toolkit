@@ -86,8 +86,9 @@ func TestLogrLevelsWithLogrusLevels(t *testing.T) {
 			expectedInfoLevel: "debug",
 		},
 		{
-			logrusLevel: logrus.DebugLevel,
-			logrLevel:   2,
+			logrusLevel:       logrus.DebugLevel,
+			logrLevel:         2,
+			expectedInfoLevel: "<DROPPED_LOG>",
 		},
 		{
 			logrusLevel:       logrus.InfoLevel,
@@ -95,8 +96,9 @@ func TestLogrLevelsWithLogrusLevels(t *testing.T) {
 			expectedInfoLevel: "info",
 		},
 		{
-			logrusLevel: logrus.InfoLevel,
-			logrLevel:   1,
+			logrusLevel:       logrus.InfoLevel,
+			logrLevel:         1,
+			expectedInfoLevel: "<DROPPED_LOG>",
 		},
 	}
 
@@ -105,7 +107,7 @@ func TestLogrLevelsWithLogrusLevels(t *testing.T) {
 			tested, b := initTestLogrus(tt.logrusLevel)
 			tested.V(tt.logrLevel).Info("hello world")
 
-			if tt.expectedInfoLevel == "" {
+			if tt.expectedInfoLevel == "<DROPPED_LOG>" {
 				assert.Empty(t, b.String())
 			} else {
 				expectedLog := fmt.Sprintf(`{"level":"%s","msg":"hello world","time":"2020-03-13T14:00:00Z"}`, tt.expectedInfoLevel)
